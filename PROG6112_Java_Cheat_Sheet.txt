@@ -1,0 +1,201 @@
+==============================================================
+PROG6112 JAVA CHEAT SHEET  (Ctrl+F to search)
+Built from the 2023, 2024, 2025 papers
+==============================================================
+
+0. EXAM RULES TO REMEMBER
+- Q1 and Q2 = SEPARATE projects, separate zips.
+- Comments, naming, no repeated code, and "compiles and runs" are marked (10 marks).
+- Interface method names are given in the paper: copy them EXACTLY (capital first letter).
+- Output must match the sample screenshot. Check spelling, spacing, headings.
+- AI only in the first 15 minutes. Do not submit AI code as your own.
+
+1. PROJECT LAYOUT
+  package name:     lowercase, e.g.  productsales
+  test package:     productsales.tests   (tests need: import productsales.ClassName;)
+  Files:  IThing.java (interface)  Thing.java (class)  Main.java (console)  or  App.java (GUI)
+  Main method:      public static void main(String[] args) { ... }
+
+2. ARRAYS
+  int[] a = {1, 2, 3};                       // 1D
+  String[] names = {"A", "B"};
+  int[][] s = { {300,150,700}, {250,200,600} };   // 2D: s[row][col]
+  s.length          = number of ROWS
+  s[0].length       = number of COLUMNS
+  for (int[] row : s) { for (int v : row) { ... } }          // for-each
+  for (int i = 0; i < s.length; i++) { for (int j = 0; j < s[i].length; j++) { s[i][j] } }
+
+  TOTAL:    int total = 0;  total += v;
+  AVERAGE:  (double) total / count          // cast first or you get integer division!
+  MAX:      int max = s[0][0];  if (v > max) max = v;
+  MIN:      int min = s[0][0];  if (v < min) min = v;
+  TOP INDEX (best name/agent/movie):
+            int top = 0;
+            for (int i = 1; i < totals.length; i++) { if (totals[i] > totals[top]) top = i; }
+            return names[top];               // or return top; if the interface returns int
+  COUNT over a limit:   if (v > LIMIT) count++;      under:  if (v < LIMIT) count++;
+  constant:             private static final int LIMIT = 500;
+
+3. PRINTING / FORMATTING
+  System.out.println("text " + value);
+  System.out.printf("%-15s", name);        // left-aligned text, width 15
+  System.out.printf("%-10d", number);      // integer, width 10
+  System.out.printf("%.2f%n", dbl);        // 2 decimals + new line
+  String.format("%.0f", 366.67)            // "367"
+  Math.round(366.67)                       // 367  (returns long)
+  String.format(java.util.Locale.US, "R %,.0f", 4300000.0)   // "R 4,300,000"
+  "\n" new line     "\t" tab
+  Table: print the heading row first, then one line per row, then totals.
+
+4. INTERFACE + CLASS
+  public interface IThing {
+      int Total(int[][] data);
+  }
+  public class Thing implements IThing {
+      @Override
+      public int Total(int[][] data) { ... return total; }
+  }
+  Use it:  IThing t = new Thing();   t.Total(data);
+  Class must implement EVERY method in the interface or it will not compile.
+
+5. VALIDATION (typical rules: not empty, > 0)
+  text == null || text.trim().isEmpty()      // empty check
+  double price = Double.parseDouble(text);   // throws NumberFormatException if not a number
+  int qty = Integer.parseInt(text.trim());
+  try { ... } catch (NumberFormatException ex) { JOptionPane.showMessageDialog(this, "Enter a number"); }
+  boolean ValidateData(Data d) { return !isEmpty(d.name) && price > 0 && qty > 0; }
+
+6. COMMON FORMULAS
+  VAT 14% added:        total = qty * price * 1.14      (or qty * price * (100 + 14) / 100.0)
+  VAT amount only:      subtotal * 0.14
+  Commission 2%:        sales * 0.02
+  Commission % input:   price * percentage / 100
+  Average:              total / count
+  Percentage of:        part / whole * 100
+
+7. UNIT TESTS (JUnit 5)
+  import org.junit.jupiter.api.Test;
+  import static org.junit.jupiter.api.Assertions.*;
+
+  public class ThingTest {
+      private final IThing thing = new Thing();
+
+      @Test
+      public void Total_ReturnsTotal() {                 // use the test name from the paper
+          int[][] data = {{1, 2}, {3, 4}};
+          assertEquals(10, thing.Total(data));
+      }
+  }
+  assertEquals(expected, actual)                 ints, Strings
+  assertEquals(expected, actual, 0.01)           doubles (delta!)
+  assertNotEquals(wrongValue, actual)            "unsuccessful calculation" tests
+  assertTrue(cond)   assertFalse(cond)           validation tests
+  JUnit 4 instead?   import org.junit.Test;  import static org.junit.Assert.*;
+  NetBeans: right-click class > Tools > Create/Update Tests.   Run tests: Alt+F6.
+  Maven missing JUnit? add junit-jupiter dependency (scope test) to pom.xml.
+
+8. SWING GUI SKELETON
+  import javax.swing.*;   import java.awt.*;
+
+  public class App extends JFrame {
+      private final JTextField txtName = new JTextField();
+      private final JComboBox<String> cmb = new JComboBox<>(new String[]{"A","B","C"});
+      private final JTextArea txtReport = new JTextArea(6, 25);
+      private final JButton btnLoad = new JButton("Load");
+      private final JLabel lblInfo = new JLabel("");
+
+      public App() {
+          super("Title");
+          setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+          setSize(400, 400);
+          setLocationRelativeTo(null);                    // centre
+          txtReport.setEditable(false);                   // read-only
+          JPanel p = new JPanel(new GridLayout(3, 2, 5, 10));   // rows, cols, gaps
+          p.add(new JLabel("NAME:"));  p.add(txtName);
+          add(p, BorderLayout.NORTH);
+          add(new JScrollPane(txtReport), BorderLayout.CENTER);
+          setJMenuBar(buildMenuBar());
+          btnLoad.addActionListener(e -> doLoad());       // button click
+      }
+      private JMenuBar buildMenuBar() {
+          JMenuBar bar = new JMenuBar();
+          JMenu file = new JMenu("File");
+          JMenuItem exit = new JMenuItem("Exit");
+          exit.addActionListener(e -> System.exit(0));
+          file.add(exit);
+          JMenu tools = new JMenu("Tools");
+          JMenuItem clear = new JMenuItem("Clear");
+          clear.addActionListener(e -> doClear());
+          tools.add(clear);
+          bar.add(file);  bar.add(tools);
+          return bar;
+      }
+      public static void main(String[] args) {
+          SwingUtilities.invokeLater(() -> new App().setVisible(true));
+      }
+  }
+  Menu items and buttons must call the SAME method when the paper says "same logic".
+  GET:   txt.getText().trim()     cmb.getSelectedItem()     cmb.getSelectedIndex()
+  SET:   txt.setText("")          cmb.setSelectedIndex(0)   lbl.setText("...")
+  Popup: JOptionPane.showMessageDialog(this, "message", "Title", JOptionPane.ERROR_MESSAGE);
+  Clear = every text field "", text area "", combo index 0, labels "".
+  Other components: JCheckBox (isSelected), JRadioButton + ButtonGroup, JList, JSpinner.
+
+9. FILES
+  Save text:
+    try (PrintWriter w = new PrintWriter("report.txt")) {
+        w.println("REPORT");
+        w.println("**********************************");
+        w.println(txtReport.getText());
+    } catch (IOException ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+  Append instead:  new FileWriter("report.txt", true)
+  Read text:
+    try (BufferedReader r = new BufferedReader(new FileReader("data.txt"))) {
+        String line;
+        while ((line = r.readLine()) != null) { txtReport.append(line + "\n"); }
+    } catch (IOException ex) { ... }
+  Imports:  java.io.PrintWriter  java.io.IOException  java.io.BufferedReader  java.io.FileReader
+  The file is saved in the project folder (where you run it).
+
+10. DATA HOLDER CLASS (when the interface takes a Data / TicketData object)
+  public class Data {
+      private final String name;  private final String price;
+      public Data(String name, String price) { this.name = name; this.price = price; }
+      public String getName() { return name; }
+      public String getPrice() { return price; }
+  }
+
+11. ARRAYLIST (if the paper allows lists)
+  import java.util.ArrayList;
+  ArrayList<Integer> list = new ArrayList<>();
+  list.add(5);  list.get(0);  list.size();  list.remove(0);
+  for (int v : list) { ... }
+
+12. COMMON ERRORS
+  cannot find symbol          typo, missing import, wrong class name, wrong package
+  integer division            (double) total / count   not   total / count
+  == on Strings               use  a.equals(b)  or  a.equalsIgnoreCase(b)
+  class not abstract...       the class is missing an interface method
+  test cannot see class       add import and make the class + methods public
+  GUI window does not show    forgot setVisible(true)
+  nothing happens on click    forgot addActionListener
+  NumberFormatException       empty or non-numeric text field: use try/catch
+  array out of bounds         i <= length  should be  i < length
+  file not found              check the file name and the project folder
+
+13. NETBEANS SHORTCUTS
+  Run project F6     Run file Shift+F6     Test project Alt+F6
+  Clean and Build Shift+F11     Fix imports Ctrl+Shift+I     Format code Alt+Shift+F
+  Save all Ctrl+Shift+S     Comment line Ctrl+/     Autocomplete Ctrl+Space
+  Create tests Ctrl+Shift+U     Rename Ctrl+R
+
+14. SUBMISSION CHECKLIST
+  [ ] Q1 and Q2 each compile and run
+  [ ] Comments on every class and method, no repeated code
+  [ ] Unit tests named as in the paper, all passing
+  [ ] Save All, close NetBeans
+  [ ] Zip Q1, zip Q2, put both in exam folder, zip again, open it to check files are inside
+  [ ] GitHub upload + copy link
+  [ ] Text file with ALL code (QUESTION 1 / QUESTION 2 headings)
+  [ ] ARC: zip + txt + GitHub link in comments, confirm it says submitted
+  [ ] Done before 14:15

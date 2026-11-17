@@ -1,0 +1,1152 @@
+==============================================================
+PROG6112 - PAST PAPER SOLUTIONS (STUDY COPY)
+Papers: 2025 (product sales), 2024 (movie tickets), 2023 (estate agents)
+==============================================================
+
+HOW TO USE THIS
+- STUDY ONLY: read it, close it, rewrite from memory, compare.
+- In the exam, adapt it to YOUR question and write your own comments.
+  Do not submit AI code as your own (the paper says so). AI use is only
+  allowed in the first 15 minutes of planning.
+- Each paper = 2 NetBeans projects (Q1 console, Q2 Swing GUI).
+- Main code is in a package, tests are in a "tests" sub-package.
+- Tests use JUnit 5. If your course uses JUnit 4, change the imports to
+  org.junit.Test and org.junit.Assert.*  (and remove "public" issues, none).
+  Maven pom.xml dependency if NetBeans does not add it for you:
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.10.2</version>
+        <scope>test</scope>
+      </dependency>
+
+THE PATTERN (same in every paper)
+Q1 (console): 2D array + String[] labels -> loop to print the table ->
+   interface + class with total/average/max/min/top -> 2-3 unit tests.
+Q2 (Swing GUI): class extends JFrame -> components -> JMenuBar ->
+   lambdas for actions -> interface + class (calculate/validate) ->
+   write report to .txt with PrintWriter -> unit tests.
+Marks are for: working output, interface created, class implements
+   interface, unit tests, comments, no duplicated code.
+
+!! The 2025 paper calls the interface IProduct in the code block but
+   IProductSales in the text. If the real paper does this, use the name in
+   the code block and rename the class files to match.
+
+##############################################################
+#                      PAPER 2025                            #
+##############################################################
+
+--------------------------------------------------------------
+2025 Q1  (project: ProductSalesReport, package: productsales)
+--------------------------------------------------------------
+
+=== FILE: productsales/IProductSales.java ===
+package productsales;
+
+/** Contract for the product sales calculations. */
+public interface IProductSales {
+    int TotalSales(int[][] productSales);
+    double AverageSales(int[][] productSales);
+    int MaxSale(int[][] productSales);
+    int MinSale(int[][] productSales);
+}
+
+=== FILE: productsales/ProductSales.java ===
+package productsales;
+
+/** Calculates total, average, max and min sales from a 2D array. */
+public class ProductSales implements IProductSales {
+
+    /** Adds every sale in every year/quarter. */
+    @Override
+    public int TotalSales(int[][] productSales) {
+        int total = 0;
+        for (int[] year : productSales) {      // each row = one year
+            for (int sale : year) {            // each column = one quarter
+                total += sale;
+            }
+        }
+        return total;
+    }
+
+    /** Total divided by the number of sales figures (cells). */
+    @Override
+    public double AverageSales(int[][] productSales) {
+        int count = 0;
+        for (int[] year : productSales) {
+            count += year.length;
+        }
+        return count == 0 ? 0 : (double) TotalSales(productSales) / count;
+    }
+
+    /** Starts with the first value, replaces it whenever a bigger one is found. */
+    @Override
+    public int MaxSale(int[][] productSales) {
+        int max = productSales[0][0];
+        for (int[] year : productSales) {
+            for (int sale : year) {
+                if (sale > max) {
+                    max = sale;
+                }
+            }
+        }
+        return max;
+    }
+
+    /** Starts with the first value, replaces it whenever a smaller one is found. */
+    @Override
+    public int MinSale(int[][] productSales) {
+        int min = productSales[0][0];
+        for (int[] year : productSales) {
+            for (int sale : year) {
+                if (sale < min) {
+                    min = sale;
+                }
+            }
+        }
+        return min;
+    }
+}
+
+=== FILE: productsales/ProductSalesReport.java ===
+package productsales;
+
+/** Console application that prints the product sales report. */
+public class ProductSalesReport {
+
+    public static void main(String[] args) {
+        // Single array for the headings, 2D array for the data (rows = years)
+        String[] quarters = {"QUARTER 1", "QUARTER 2", "QUARTER 3"};
+        int[][] sales = {
+            {300, 150, 700},   // Year 1
+            {250, 200, 600}    // Year 2
+        };
+
+        IProductSales productSales = new ProductSales();
+
+        System.out.println("PRODUCT SALES REPORT - 2025");
+        System.out.println("-------------------------------------------");
+
+        // Column headings
+        System.out.printf("%-10s", "");
+        for (String quarter : quarters) {
+            System.out.printf("%-12s", quarter);
+        }
+        System.out.println();
+
+        // One line per year
+        for (int i = 0; i < sales.length; i++) {
+            System.out.printf("%-10s", "YEAR " + (i + 1));
+            for (int sale : sales[i]) {
+                System.out.printf("%-12d", sale);
+            }
+            System.out.println();
+        }
+
+        System.out.println("-------------------------------------------");
+        System.out.println("Total sales:   " + productSales.TotalSales(sales));
+        System.out.printf("Average sales: %.0f%n", productSales.AverageSales(sales));
+        System.out.println("Maximum sale:  " + productSales.MaxSale(sales));
+        System.out.println("Minimum sale:  " + productSales.MinSale(sales));
+        System.out.println("-------------------------------------------");
+    }
+}
+
+=== FILE: productsales/tests/ProductSalesTest.java ===
+package productsales.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import productsales.IProductSales;
+import productsales.ProductSales;
+
+/** Unit tests for the ProductSales class. */
+public class ProductSalesTest {
+
+    // Same data as the question
+    private final int[][] data = {{300, 150, 700}, {250, 200, 600}};
+    private final IProductSales productSales = new ProductSales();
+
+    @Test
+    public void CalculateTotalSales_ReturnsTotalSales() {
+        assertEquals(2200, productSales.TotalSales(data));
+    }
+
+    @Test
+    public void AverageSales_ReturnsAverageProductSales() {
+        // 2200 / 6 = 366.67 (delta allows for decimal rounding)
+        assertEquals(366.67, productSales.AverageSales(data), 0.01);
+    }
+}
+
+--------------------------------------------------------------
+2025 Q2  (project: ProductSalesApp, package: productsalesgui)
+--------------------------------------------------------------
+
+=== FILE: productsalesgui/IProductSales.java ===
+package productsalesgui;
+
+public interface IProductSales {
+    int[][] GetProductSales();
+    int GetTotalSales();
+    int GetSalesOverLimit();
+    int GetSalesUnderLimit();
+    int GetProductsProcessed();
+    double GetAverageSales();
+}
+
+=== FILE: productsalesgui/ProductSales.java ===
+package productsalesgui;
+
+/** Holds the sales data and does all the calculations. */
+public class ProductSales implements IProductSales {
+
+    private static final int SALES_LIMIT = 500;   // retailer's success limit
+    private final int[][] productSales;
+
+    /** Default data from the question (rows = years, columns = products). */
+    public ProductSales() {
+        this(new int[][]{{300, 150, 700}, {250, 200, 600}});
+    }
+
+    /** Lets the unit tests supply their own data. */
+    public ProductSales(int[][] productSales) {
+        this.productSales = productSales;
+    }
+
+    @Override
+    public int[][] GetProductSales() {
+        return productSales;
+    }
+
+    @Override
+    public int GetTotalSales() {
+        int total = 0;
+        for (int[] year : productSales) {
+            for (int sale : year) {
+                total += sale;
+            }
+        }
+        return total;
+    }
+
+    @Override
+    public double GetAverageSales() {
+        int count = 0;
+        for (int[] year : productSales) {
+            count += year.length;
+        }
+        return count == 0 ? 0 : (double) GetTotalSales() / count;
+    }
+
+    /** Counts sales above the limit. */
+    @Override
+    public int GetSalesOverLimit() {
+        int count = 0;
+        for (int[] year : productSales) {
+            for (int sale : year) {
+                if (sale > SALES_LIMIT) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    /** Counts sales below the limit. */
+    @Override
+    public int GetSalesUnderLimit() {
+        int count = 0;
+        for (int[] year : productSales) {
+            for (int sale : year) {
+                if (sale < SALES_LIMIT) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    /** Number of years = number of rows in the 2D array. */
+    @Override
+    public int GetProductsProcessed() {
+        return productSales.length;
+    }
+}
+
+=== FILE: productsalesgui/ProductSalesApp.java ===
+package productsalesgui;
+
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+
+/** Swing GUI for the product sales application. */
+public class ProductSalesApp extends JFrame {
+
+    private static final String STARS = "**********************************";
+
+    private final IProductSales productSales = new ProductSales();
+
+    private final JButton btnLoad = new JButton("Load Product Data");
+    private final JButton btnSave = new JButton("Save Product Data");
+    private final JTextArea txtReport = new JTextArea(6, 25);
+    private final JLabel lblYears = new JLabel("");   // labels are read-only
+
+    public ProductSalesApp() {
+        super("Product Sales Application");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+        setSize(320, 340);
+        setLocationRelativeTo(null);
+
+        // Components
+        btnLoad.setPreferredSize(new Dimension(250, 30));
+        btnSave.setPreferredSize(new Dimension(250, 30));
+        txtReport.setEditable(false);
+
+        add(btnLoad);
+        add(btnSave);
+        add(new JScrollPane(txtReport));
+        add(lblYears);
+
+        setJMenuBar(buildMenuBar());
+
+        // Buttons call the same methods as the menu items
+        btnLoad.addActionListener(e -> loadData());
+        btnSave.addActionListener(e -> saveData());
+    }
+
+    /** Builds File (Exit) and Tools (Load, Save, Clear). */
+    private JMenuBar buildMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem miExit = new JMenuItem("Exit");
+        miExit.addActionListener(e -> System.exit(0));
+        fileMenu.add(miExit);
+
+        JMenu toolsMenu = new JMenu("Tools");
+        JMenuItem miLoad = new JMenuItem("Load Product Data");
+        JMenuItem miSave = new JMenuItem("Save Product Data");
+        JMenuItem miClear = new JMenuItem("Clear");
+        miLoad.addActionListener(e -> loadData());   // same logic as the button
+        miSave.addActionListener(e -> saveData());   // same logic as the button
+        miClear.addActionListener(e -> clearData());
+        toolsMenu.add(miLoad);
+        toolsMenu.add(miSave);
+        toolsMenu.add(miClear);
+
+        menuBar.add(fileMenu);
+        menuBar.add(toolsMenu);
+        return menuBar;
+    }
+
+    /** Calculates everything and shows it in the text area. */
+    private void loadData() {
+        String report = "Total Sales: " + productSales.GetTotalSales() + "\n"
+                + "Average Sales: " + Math.round(productSales.GetAverageSales()) + "\n"
+                + "Sales over limit: " + productSales.GetSalesOverLimit() + "\n"
+                + "Sales under limit: " + productSales.GetSalesUnderLimit();
+        txtReport.setText(report);
+        lblYears.setText("Years Processed: " + productSales.GetProductsProcessed());
+    }
+
+    /** Saves the text area contents to data.txt. */
+    private void saveData() {
+        if (txtReport.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Load the product data first.");
+            return;
+        }
+        try (PrintWriter writer = new PrintWriter("data.txt")) {
+            writer.println("DATA LOG");
+            writer.println(STARS);
+            writer.println(txtReport.getText());
+            writer.println(STARS);
+            JOptionPane.showMessageDialog(this, "Saved to data.txt");
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not save file: " + ex.getMessage());
+        }
+    }
+
+    /** Clears the text area and the years label. */
+    private void clearData() {
+        txtReport.setText("");
+        lblYears.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new ProductSalesApp().setVisible(true));
+    }
+}
+
+=== FILE: productsalesgui/tests/ProductSalesTest.java ===
+package productsalesgui.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import productsalesgui.IProductSales;
+import productsalesgui.ProductSales;
+
+public class ProductSalesTest {
+
+    private final IProductSales productSales = new ProductSales();
+
+    @Test
+    public void GetSalesOverLimit_ReturnsNumberOfSales() {
+        // 700 and 600 are above the limit of 500
+        assertEquals(2, productSales.GetSalesOverLimit());
+    }
+
+    @Test
+    public void GetSalesUnderLimit_ReturnsNumberOfSales() {
+        // 300, 150, 250, 200 are below the limit of 500
+        assertEquals(4, productSales.GetSalesUnderLimit());
+    }
+}
+
+
+##############################################################
+#                      PAPER 2024                            #
+##############################################################
+
+--------------------------------------------------------------
+2024 Q1  (project: MovieReport, package: movietickets)
+--------------------------------------------------------------
+
+=== FILE: movietickets/IMovieTickets.java ===
+package movietickets;
+
+public interface IMovieTickets {
+    int TotalMovieSales(int[] movieTicketSales);
+    String TopMovie(String[] movies, int[] totalSales);
+}
+
+=== FILE: movietickets/MovieTickets.java ===
+package movietickets;
+
+public class MovieTickets implements IMovieTickets {
+
+    /** Adds up the monthly ticket sales of ONE movie (a single array). */
+    @Override
+    public int TotalMovieSales(int[] movieTicketSales) {
+        int total = 0;
+        for (int sales : movieTicketSales) {
+            total += sales;
+        }
+        return total;
+    }
+
+    /** Finds the position of the highest total and returns that movie's name. */
+    @Override
+    public String TopMovie(String[] movies, int[] totalSales) {
+        int topIndex = 0;
+        for (int i = 1; i < totalSales.length; i++) {
+            if (totalSales[i] > totalSales[topIndex]) {
+                topIndex = i;
+            }
+        }
+        return movies[topIndex];
+    }
+}
+
+=== FILE: movietickets/MovieReport.java ===
+package movietickets;
+
+public class MovieReport {
+
+    public static void main(String[] args) {
+        String[] movies = {"Napoleon", "Oppenheimer"};
+        String[] months = {"JAN", "FEB", "MAR"};
+        int[][] sales = {
+            {3000, 1500, 1700},   // Napoleon
+            {3500, 1200, 1600}    // Oppenheimer
+        };
+
+        IMovieTickets movieTickets = new MovieTickets();
+        int[] totals = new int[movies.length];   // total per movie
+
+        System.out.println("MOVIE TICKET SALES REPORT - 2024");
+        System.out.printf("%-15s", "");
+        for (String month : months) {
+            System.out.printf("%-10s", month);
+        }
+        System.out.println();
+        System.out.println("---------------------------------------------");
+
+        // Print each movie row and work out its total
+        for (int i = 0; i < movies.length; i++) {
+            System.out.printf("%-15s", movies[i]);
+            for (int sale : sales[i]) {
+                System.out.printf("%-10d", sale);
+            }
+            System.out.println();
+            totals[i] = movieTickets.TotalMovieSales(sales[i]);
+        }
+
+        System.out.println();
+        for (int i = 0; i < movies.length; i++) {
+            System.out.println("Total movie ticket sales for " + movies[i] + " " + totals[i]);
+        }
+        System.out.println();
+        System.out.println("Top performing movie: " + movieTickets.TopMovie(movies, totals));
+    }
+}
+
+=== FILE: movietickets/tests/MovieTicketsTest.java ===
+package movietickets.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import movietickets.IMovieTickets;
+import movietickets.MovieTickets;
+
+public class MovieTicketsTest {
+
+    private final IMovieTickets movieTickets = new MovieTickets();
+
+    @Test
+    public void CalculateTotalSales_ReturnsExpectedTotalSales() {
+        int[] napoleon = {3000, 1500, 1700};
+        assertEquals(6200, movieTickets.TotalMovieSales(napoleon));
+    }
+
+    @Test
+    public void TopMovieSales_ReturnsTopMovie() {
+        String[] movies = {"Napoleon", "Oppenheimer"};
+        int[] totals = {6200, 6300};
+        assertEquals("Oppenheimer", movieTickets.TopMovie(movies, totals));
+    }
+}
+
+--------------------------------------------------------------
+2024 Q2  (project: MovieTicketsApp, package: movieticketsgui)
+--------------------------------------------------------------
+
+=== FILE: movieticketsgui/MovieTicketData.java ===
+package movieticketsgui;
+
+/** Simple data holder for the values captured on the form. */
+public class MovieTicketData {
+    private final String movieName;
+    private final int numberOfTickets;
+    private final double ticketPrice;
+
+    public MovieTicketData(String movieName, int numberOfTickets, double ticketPrice) {
+        this.movieName = movieName;
+        this.numberOfTickets = numberOfTickets;
+        this.ticketPrice = ticketPrice;
+    }
+
+    public String getMovieName() { return movieName; }
+    public int getNumberOfTickets() { return numberOfTickets; }
+    public double getTicketPrice() { return ticketPrice; }
+}
+
+=== FILE: movieticketsgui/IMovieTickets.java ===
+package movieticketsgui;
+
+public interface IMovieTickets {
+    double CalculateTotalTicketPrice(int numberOfTickets, double ticketPrice);
+    boolean ValidateData(MovieTicketData movieTicketData);
+}
+
+=== FILE: movieticketsgui/MovieTickets.java ===
+package movieticketsgui;
+
+public class MovieTickets implements IMovieTickets {
+
+    private static final double VAT_PERCENT = 14.0;
+
+    /** Tickets x price, plus 14% VAT. (3 x 100 -> 342.0) */
+    @Override
+    public double CalculateTotalTicketPrice(int numberOfTickets, double ticketPrice) {
+        return numberOfTickets * ticketPrice * (100 + VAT_PERCENT) / 100.0;
+    }
+
+    /** Name cannot be empty; price and number of tickets must be above zero. */
+    @Override
+    public boolean ValidateData(MovieTicketData movieTicketData) {
+        String name = movieTicketData.getMovieName();
+        return name != null && !name.trim().isEmpty()
+                && movieTicketData.getTicketPrice() > 0
+                && movieTicketData.getNumberOfTickets() > 0;
+    }
+}
+
+=== FILE: movieticketsgui/MovieTicketsApp.java ===
+package movieticketsgui;
+
+import java.awt.GridLayout;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+public class MovieTicketsApp extends JFrame {
+
+    private static final String STARS = "***********************************";
+
+    private final IMovieTickets movieTickets = new MovieTickets();
+
+    // Form components
+    private final JComboBox<String> cmbMovie =
+            new JComboBox<>(new String[]{"Napoleon", "Oppenheimer", "Damsel"});
+    private final JTextField txtTickets = new JTextField();
+    private final JTextField txtPrice = new JTextField();
+    private final JTextArea txtReport = new JTextArea(6, 25);
+
+    public MovieTicketsApp() {
+        super("MOVIE TICKETS");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 420);
+        setLocationRelativeTo(null);
+
+        txtReport.setEditable(false);   // read-only text area
+
+        // Labels and inputs in a 2-column grid
+        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 10));
+        panel.add(new JLabel("MOVIE:"));
+        panel.add(cmbMovie);
+        panel.add(new JLabel("NUMBER OF TICKETS:"));
+        panel.add(txtTickets);
+        panel.add(new JLabel("TICKET PRICE:"));
+        panel.add(txtPrice);
+        panel.add(new JLabel("TICKET REPORT:"));
+        add(panel, java.awt.BorderLayout.NORTH);
+        add(new JScrollPane(txtReport), java.awt.BorderLayout.CENTER);
+
+        setJMenuBar(buildMenuBar());
+    }
+
+    private JMenuBar buildMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem miExit = new JMenuItem("Exit");
+        miExit.addActionListener(e -> System.exit(0));
+        fileMenu.add(miExit);
+
+        JMenu toolsMenu = new JMenu("Tools");
+        JMenuItem miProcess = new JMenuItem("Process");
+        JMenuItem miClear = new JMenuItem("Clear");
+        miProcess.addActionListener(e -> processTickets());
+        miClear.addActionListener(e -> clearForm());
+        toolsMenu.add(miProcess);
+        toolsMenu.add(miClear);
+
+        menuBar.add(fileMenu);
+        menuBar.add(toolsMenu);
+        return menuBar;
+    }
+
+    /** Captures the input, validates it, shows the report and saves it. */
+    private void processTickets() {
+        try {
+            String movie = (String) cmbMovie.getSelectedItem();
+            int tickets = Integer.parseInt(txtTickets.getText().trim());
+            double price = Double.parseDouble(txtPrice.getText().trim());
+
+            MovieTicketData data = new MovieTicketData(movie, tickets, price);
+            if (!movieTickets.ValidateData(data)) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid data: tickets and price must be above 0.",
+                        "Validation", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            double total = movieTickets.CalculateTotalTicketPrice(tickets, price);
+            String report = "MOVIE NAME: " + movie + "\n"
+                    + "MOVIE TICKET PRICE: R " + price + "\n"
+                    + "NUMBER OF TICKETS: " + tickets + "\n"
+                    + "TOTAL TICKET PRICE: R " + total;
+            txtReport.setText(report);
+            saveReport(report);
+        } catch (NumberFormatException ex) {
+            // Text fields contained letters or were empty
+            JOptionPane.showMessageDialog(this, "Please enter valid numbers.",
+                    "Validation", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Writes the report to report.txt. */
+    private void saveReport(String report) {
+        try (PrintWriter writer = new PrintWriter("report.txt")) {
+            writer.println("MOVIE TICKET REPORT");
+            writer.println(STARS);
+            writer.println(report);
+            writer.println(STARS);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not save file: " + ex.getMessage());
+        }
+    }
+
+    /** Puts every control back to its default state. */
+    private void clearForm() {
+        cmbMovie.setSelectedIndex(0);
+        txtTickets.setText("");
+        txtPrice.setText("");
+        txtReport.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new MovieTicketsApp().setVisible(true));
+    }
+}
+
+=== FILE: movieticketsgui/tests/MovieTicketsTest.java ===
+package movieticketsgui.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import movieticketsgui.IMovieTickets;
+import movieticketsgui.MovieTicketData;
+import movieticketsgui.MovieTickets;
+
+public class MovieTicketsTest {
+
+    private final IMovieTickets movieTickets = new MovieTickets();
+
+    @Test
+    public void CalculateTotalTicketPrice_CalculatedSuccessfully() {
+        // 3 tickets x R100 + 14% VAT = R342
+        assertEquals(342.0, movieTickets.CalculateTotalTicketPrice(3, 100.0), 0.001);
+    }
+
+    @Test
+    public void ValidateData_MovieNameEmpty_ReturnsFalse() {
+        assertFalse(movieTickets.ValidateData(new MovieTicketData("", 3, 100.0)));
+    }
+
+    @Test
+    public void ValidateData_ValidData_ReturnsTrue() {
+        assertTrue(movieTickets.ValidateData(new MovieTicketData("Napoleon", 3, 100.0)));
+    }
+}
+
+
+##############################################################
+#                      PAPER 2023                            #
+##############################################################
+
+--------------------------------------------------------------
+2023 Q1  (project: EstateAgentReport, package: estateagents)
+--------------------------------------------------------------
+
+=== FILE: estateagents/IEstateAgent.java ===
+package estateagents;
+
+public interface IEstateAgent {
+    double EstateAgentSales(double[] propertySales);
+    double EstateAgentCommission(double propertySales);
+    int TopEstateAgent(double[] totalSales);
+}
+
+=== FILE: estateagents/EstateAgent.java ===
+package estateagents;
+
+public class EstateAgent implements IEstateAgent {
+
+    private static final double COMMISSION_RATE = 0.02;   // 2%
+
+    /** Total of one agent's monthly sales. */
+    @Override
+    public double EstateAgentSales(double[] propertySales) {
+        double total = 0;
+        for (double sale : propertySales) {
+            total += sale;
+        }
+        return total;
+    }
+
+    /** 2% of the agent's total sales. */
+    @Override
+    public double EstateAgentCommission(double propertySales) {
+        return propertySales * COMMISSION_RATE;
+    }
+
+    /** Returns the INDEX (position) of the agent with the highest total. */
+    @Override
+    public int TopEstateAgent(double[] totalSales) {
+        int topIndex = 0;
+        for (int i = 1; i < totalSales.length; i++) {
+            if (totalSales[i] > totalSales[topIndex]) {
+                topIndex = i;
+            }
+        }
+        return topIndex;
+    }
+}
+
+=== FILE: estateagents/EstateAgentReport.java ===
+package estateagents;
+
+import java.util.Locale;
+
+public class EstateAgentReport {
+
+    public static void main(String[] args) {
+        String[] agents = {"Joe Bloggs", "Jane Doe"};
+        String[] months = {"JAN", "FEB", "MAR"};
+        double[][] sales = {
+            {800000, 1500000, 2000000},   // Joe Bloggs
+            {700000, 1200000, 1600000}    // Jane Doe
+        };
+
+        IEstateAgent estateAgent = new EstateAgent();
+        double[] totals = new double[agents.length];
+
+        // Headings
+        System.out.println("ESTATE AGENTS SALES REPORT");
+        System.out.printf("%-15s", "");
+        for (String month : months) {
+            System.out.printf("%-18s", month);
+        }
+        System.out.println();
+        System.out.println("-------------------------------------------------------------");
+
+        // Monthly sales rows + total for each agent
+        for (int i = 0; i < agents.length; i++) {
+            System.out.printf("%-15s", agents[i]);
+            for (double sale : sales[i]) {
+                System.out.printf("%-18s", "R " + sale);
+            }
+            System.out.println();
+            totals[i] = estateAgent.EstateAgentSales(sales[i]);
+        }
+
+        System.out.println();
+        for (int i = 0; i < agents.length; i++) {
+            System.out.println("Total property sales for " + agents[i] + " = " + rands(totals[i]));
+        }
+
+        System.out.println();
+        for (int i = 0; i < agents.length; i++) {
+            double commission = estateAgent.EstateAgentCommission(totals[i]);
+            System.out.println("Sales Commission for " + agents[i] + " = " + rands(commission));
+        }
+
+        int top = estateAgent.TopEstateAgent(totals);
+        System.out.println();
+        System.out.println("Top performing estate agent: " + agents[top]);
+    }
+
+    /** Formats an amount like R 4,300,000 (Locale.US forces commas). */
+    private static String rands(double amount) {
+        return String.format(Locale.US, "R %,.0f", amount);
+    }
+}
+
+=== FILE: estateagents/tests/EstateAgentTest.java ===
+package estateagents.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import estateagents.EstateAgent;
+import estateagents.IEstateAgent;
+
+public class EstateAgentTest {
+
+    private final IEstateAgent estateAgent = new EstateAgent();
+
+    @Test
+    public void CalculateTotalSales_ReturnsTotalSales() {
+        double[] joe = {800000, 1500000, 2000000};
+        assertEquals(4300000, estateAgent.EstateAgentSales(joe), 0.001);
+    }
+
+    @Test
+    public void CalculateTotalCommission_ReturnsCommission() {
+        // 2% of 4 300 000 = 86 000
+        assertEquals(86000, estateAgent.EstateAgentCommission(4300000), 0.001);
+    }
+
+    @Test
+    public void TopAgent_ReturnsTopPosition() {
+        double[] totals = {4300000, 3500000};
+        assertEquals(0, estateAgent.TopEstateAgent(totals));   // index 0 = Joe
+    }
+}
+
+--------------------------------------------------------------
+2023 Q2  (project: EstateAgentApp, package: estateagentsgui)
+--------------------------------------------------------------
+
+=== FILE: estateagentsgui/Data.java ===
+package estateagentsgui;
+
+/** Holds the raw text captured on the form. */
+public class Data {
+    private final String location;
+    private final String agentName;
+    private final String propertyPrice;
+    private final String commissionPercentage;
+
+    public Data(String location, String agentName,
+                String propertyPrice, String commissionPercentage) {
+        this.location = location;
+        this.agentName = agentName;
+        this.propertyPrice = propertyPrice;
+        this.commissionPercentage = commissionPercentage;
+    }
+
+    public String getLocation() { return location; }
+    public String getAgentName() { return agentName; }
+    public String getPropertyPrice() { return propertyPrice; }
+    public String getCommissionPercentage() { return commissionPercentage; }
+}
+
+=== FILE: estateagentsgui/IEstateAgent.java ===
+package estateagentsgui;
+
+public interface IEstateAgent {
+    double CalculateCommission(String propertyPrice, String agentCommission);
+    boolean ValidateData(Data dataToValidate);
+}
+
+=== FILE: estateagentsgui/EstateAgent.java ===
+package estateagentsgui;
+
+public class EstateAgent implements IEstateAgent {
+
+    /** Commission = price x percentage / 100 (800000 x 10 / 100 = 80000). */
+    @Override
+    public double CalculateCommission(String propertyPrice, String agentCommission) {
+        double price = Double.parseDouble(propertyPrice);
+        double percentage = Double.parseDouble(agentCommission);
+        return price * percentage / 100;
+    }
+
+    /** Location/name not empty; price and percentage above zero. */
+    @Override
+    public boolean ValidateData(Data dataToValidate) {
+        if (isEmpty(dataToValidate.getLocation()) || isEmpty(dataToValidate.getAgentName())) {
+            return false;
+        }
+        try {
+            double price = Double.parseDouble(dataToValidate.getPropertyPrice());
+            double percentage = Double.parseDouble(dataToValidate.getCommissionPercentage());
+            return price > 0 && percentage > 0;
+        } catch (NumberFormatException ex) {
+            return false;   // not a number = invalid
+        }
+    }
+
+    private boolean isEmpty(String text) {
+        return text == null || text.trim().isEmpty();
+    }
+}
+
+=== FILE: estateagentsgui/EstateAgentApp.java ===
+package estateagentsgui;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+public class EstateAgentApp extends JFrame {
+
+    private static final String STARS = "***********************************";
+
+    private final IEstateAgent estateAgent = new EstateAgent();
+
+    private final JComboBox<String> cmbLocation =
+            new JComboBox<>(new String[]{"Cape Town", "Durban", "Pretoria"});
+    private final JTextField txtName = new JTextField();
+    private final JTextField txtPrice = new JTextField();
+    private final JTextField txtCommission = new JTextField();
+    private final JTextArea txtReport = new JTextArea(7, 25);
+
+    public EstateAgentApp() {
+        super("Estate Agent Report");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(420, 460);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 10));
+        panel.add(new JLabel("AGENT LOCATION:"));
+        panel.add(cmbLocation);
+        panel.add(new JLabel("ESTATE AGENT NAME:"));
+        panel.add(txtName);
+        panel.add(new JLabel("PROPERTY PRICE:"));
+        panel.add(txtPrice);
+        panel.add(new JLabel("COMMISSION PERCENTAGE:"));
+        panel.add(txtCommission);
+        panel.add(new JLabel("ESTATE AGENT REPORT:"));
+
+        add(panel, BorderLayout.NORTH);
+        add(new JScrollPane(txtReport), BorderLayout.CENTER);
+
+        setJMenuBar(buildMenuBar());
+    }
+
+    /** File (Exit) and Tools (Process Report, Clear, Save Report). */
+    private JMenuBar buildMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem miExit = new JMenuItem("Exit");
+        miExit.addActionListener(e -> System.exit(0));
+        fileMenu.add(miExit);
+
+        JMenu toolsMenu = new JMenu("Tools");
+        JMenuItem miProcess = new JMenuItem("Process Report");
+        JMenuItem miClear = new JMenuItem("Clear");
+        JMenuItem miSave = new JMenuItem("Save Report");
+        miProcess.addActionListener(e -> processReport());
+        miClear.addActionListener(e -> clearForm());
+        miSave.addActionListener(e -> saveReport());
+        toolsMenu.add(miProcess);
+        toolsMenu.add(miClear);
+        toolsMenu.add(miSave);
+
+        menuBar.add(fileMenu);
+        menuBar.add(toolsMenu);
+        return menuBar;
+    }
+
+    /** Validates the input, calculates the commission and shows the report. */
+    private void processReport() {
+        Data data = new Data((String) cmbLocation.getSelectedItem(),
+                txtName.getText(), txtPrice.getText().trim(),
+                txtCommission.getText().trim());
+
+        if (!estateAgent.ValidateData(data)) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid data: fill in all fields; price and percentage must be above 0.",
+                    "Validation", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        double commission = estateAgent.CalculateCommission(
+                data.getPropertyPrice(), data.getCommissionPercentage());
+
+        txtReport.setText("AGENT LOCATION: " + data.getLocation() + "\n"
+                + "AGENT NAME: " + data.getAgentName() + "\n"
+                + "PROPERTY PRICE: R " + Double.parseDouble(data.getPropertyPrice()) + "\n"
+                + "COMMISSION PERCENTAGE: " + Double.parseDouble(data.getCommissionPercentage()) + "%\n"
+                + "CALCULATED COMMISSION: R " + commission);
+    }
+
+    /** Saves whatever is in the report area to report.txt. */
+    private void saveReport() {
+        if (txtReport.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Process the report first.");
+            return;
+        }
+        try (PrintWriter writer = new PrintWriter("report.txt")) {
+            writer.println("ESTATE AGENT REPORT");
+            writer.println(STARS);
+            writer.println(txtReport.getText());
+            writer.println(STARS);
+            JOptionPane.showMessageDialog(this, "Saved to report.txt");
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not save file: " + ex.getMessage());
+        }
+    }
+
+    /** Resets all fields and the report area. */
+    private void clearForm() {
+        cmbLocation.setSelectedIndex(0);
+        txtName.setText("");
+        txtPrice.setText("");
+        txtCommission.setText("");
+        txtReport.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new EstateAgentApp().setVisible(true));
+    }
+}
+
+=== FILE: estateagentsgui/tests/EstateAgentTest.java ===
+package estateagentsgui.tests;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import estateagentsgui.Data;
+import estateagentsgui.EstateAgent;
+import estateagentsgui.IEstateAgent;
+
+public class EstateAgentTest {
+
+    private final IEstateAgent estateAgent = new EstateAgent();
+
+    @Test
+    public void CalculateCommission_CalculatedSuccessfully() {
+        // R800 000 at 10% = R80 000
+        assertEquals(80000.0, estateAgent.CalculateCommission("800000", "10"), 0.001);
+    }
+
+    @Test
+    public void CalculateCommission_CalculatedUnSuccessfully() {
+        // A wrong expected value must NOT match the real result
+        assertNotEquals(90000.0, estateAgent.CalculateCommission("800000", "10"), 0.001);
+    }
+
+    @Test
+    public void ValidateData_EmptyName_ReturnsFalse() {
+        assertFalse(estateAgent.ValidateData(new Data("Cape Town", "", "800000", "10")));
+    }
+
+    @Test
+    public void ValidateData_ValidData_ReturnsTrue() {
+        assertTrue(estateAgent.ValidateData(new Data("Cape Town", "Joe Bloggs", "800000", "10")));
+    }
+}
+
+
+==============================================================
+QUICK REFERENCE - things you reuse in every GUI question
+==============================================================
+Frame:        public class X extends JFrame { super("Title"); setSize(w,h); }
+Close:        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);   Exit item: System.exit(0);
+Combo box:    new JComboBox<>(new String[]{"A","B"});   getSelectedItem();  setSelectedIndex(0);
+Text field:   new JTextField();  getText().trim();  setText("");
+Text area:    new JTextArea(rows, cols);  setEditable(false);  setText("...");
+Menu:         JMenuBar -> JMenu -> JMenuItem;  setJMenuBar(menuBar);
+Click event:  item.addActionListener(e -> method());
+Save file:    try (PrintWriter w = new PrintWriter("report.txt")) { w.println(...); }
+Validation:   try { Double.parseDouble(text); } catch (NumberFormatException ex) { ... }
+Messages:     JOptionPane.showMessageDialog(this, "text");
+Unit test:    @Test public void Name() { assertEquals(expected, actual, delta); }
